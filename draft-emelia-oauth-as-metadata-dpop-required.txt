@@ -1,0 +1,288 @@
+
+
+
+
+Web Authorization Protocol                                      E. Smith
+Internet-Draft                                           27 October 2026
+Intended status: Standards Track                                        
+Expires: 30 April 2027
+
+
+    OAuth Authorization Server Metadata Parameter for Requiring DPoP
+          draft-emelia-oauth-as-metadata-dpop-required-latest
+
+Abstract
+
+   This specification defines a new OAuth 2.0 Authorization Server
+   Metadata parameter, dpop_bound_access_tokens_required, which allows
+   an authorization server to indicate that it always issues DPoP-bound
+   access tokens and requires DPoP for all requests made to it to obtain
+   access tokens, including pushed authorization requests.
+
+   This complements the metadata parameter of the same name defined in
+   OAuth 2.0 Protected Resource Metadata.
+
+About This Document
+
+   This note is to be removed before publishing as an RFC.
+
+   The latest revision of this draft can be found at
+   https://drafts.thisismissem.social/draft-emelia-oauth-as-metadata-
+   dpop-required/draft-emelia-oauth-as-metadata-dpop-required.html.
+   Status information for this document may be found at
+   https://datatracker.ietf.org/doc/draft-emelia-oauth-as-metadata-dpop-
+   required/.
+
+   Discussion of this document takes place on the Web Authorization
+   Protocol Working Group mailing list (mailto:oauth@ietf.org), which is
+   archived at https://mailarchive.ietf.org/arch/browse/oauth/.
+   Subscribe at https://www.ietf.org/mailman/listinfo/oauth/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/ThisIsMissEm/draft-emelia-oauth-as-metadata-dpop-
+   required.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 30 April 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction
+   2.  Conventions and Definitions
+   3.  Authorization Server Metadata
+     3.1.  Example
+   4.  Security Considerations
+   5.  IANA Considerations
+     5.1.  OAuth Authorization Server Metadata Registry
+   6.  References
+     6.1.  Normative References
+     6.2.  Informative References
+   Acknowledgments
+   Document History
+     -00
+   Author's Address
+
+1.  Introduction
+
+   An OAuth 2.0 [RFC6749] client can determine from the
+   dpop_signing_alg_values_supported authorization server metadata
+   parameter (Section 5.1 of [RFC9449]) whether an authorization server
+   supports DPoP, but not whether the authorization server requires it.
+
+   Without this information, a client can only discover that DPoP is
+   required by sending a request without DPoP, receiving an error, and
+   retrying the request with DPoP.  [RFC9449] does not define a specific
+   error for a request that is missing a required DPoP proof, so the
+   client cannot reliably distinguish this case from other failures.
+   Additionally, a client that does not support DPoP has no way to
+   determine in advance that it cannot complete an authorization flow
+   with the authorization server, and may only discover this after the
+   user has completed the authorization request.
+
+   OAuth 2.0 Protected Resource Metadata [RFC9728] registered a
+   dpop_bound_access_tokens_required parameter in the IANA "OAuth
+   Protected Resource Metadata" registry established by that
+   specification; however, no similar parameter was added to the "OAuth
+   Authorization Server Metadata" registry established by OAuth 2.0
+   Authorization Server Metadata [RFC8414].  This specification defines
+   that metadata parameter for authorization servers.
+
+2.  Conventions and Definitions
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+3.  Authorization Server Metadata
+
+   The metadata parameter dpop_bound_access_tokens_required is an
+   optional Boolean value specifying whether the authorization server
+   always issues DPoP-bound access tokens [RFC9449], and requires DPoP
+   for all requests made to it to obtain access tokens.  The default
+   value is false.
+
+   If the metadata parameter dpop_bound_access_tokens_required is true:
+
+   *  the authorization server MUST NOT issue access tokens that are not
+      DPoP-bound, and MUST reject token requests that do not include a
+      DPoP proof (Section 5 of [RFC9449]).
+
+   *  the authorization server MUST also publish the
+      dpop_signing_alg_values_supported metadata parameter (Section 5.1
+      of [RFC9449]).
+
+   *  the client MUST include a DPoP proof in token requests (Section 5
+      of [RFC9449]).
+
+   *  if the client uses pushed authorization requests [RFC9126],
+      including when the authorization server requires them
+      (require_pushed_authorization_requests, Section 5 of [RFC9126]),
+      the client MUST bind them to a DPoP key (Section 10.1 of
+      [RFC9449]), and the authorization server MUST reject pushed
+      authorization requests that are not bound to a DPoP key.
+
+   A client that does not support DPoP SHOULD NOT initiate an
+   authorization request with an authorization server that advertises a
+   value of true.
+
+   This metadata parameter applies to all clients of the authorization
+   server.  A requirement that a specific client always uses DPoP is
+   instead expressed using the dpop_bound_access_tokens client metadata
+   parameter (Section 5.2 of [RFC9449]).
+
+   Unlike the metadata parameter of the same name for protected
+   resources [RFC9728], which indicates that a protected resource only
+   accepts DPoP-bound access tokens, this metadata parameter also covers
+   the requests a client makes to the authorization server to obtain
+   access tokens.
+
+   Since access tokens issued by such an authorization server are DPoP-
+   bound, clients present them using the DPoP authentication scheme
+   (Section 7 of [RFC9449]).  As a result, these access tokens can only
+   be used with resource servers that support DPoP; a resource server
+   that does not support DPoP will reject such requests.
+
+3.1.  Example
+
+   The following is a non-normative example of authorization server
+   metadata that includes the dpop_bound_access_tokens_required metadata
+   parameter:
+
+   {
+     "issuer": "https://as.example.com",
+     "authorization_endpoint": "https://as.example.com/authorize",
+     "token_endpoint": "https://as.example.com/token",
+     "pushed_authorization_request_endpoint": "https://as.example.com/par",
+     "dpop_signing_alg_values_supported": ["ES256", "EdDSA"],
+     "dpop_bound_access_tokens_required": true
+   }
+
+4.  Security Considerations
+
+   The security considerations of [RFC9449] apply to this specification.
+
+   The dpop_bound_access_tokens_required parameter informs clients of
+   the authorization server's requirements; it does not enforce them.
+   Requests from clients that ignore or do not retrieve the
+   authorization server metadata are rejected by the authorization
+   server, as described in Section 3.
+
+   A DPoP-bound access token only provides protection against token
+   replay if the resource server verifies the binding.  An attacker that
+   obtains a DPoP-bound access token may attempt to present it using the
+   Bearer authentication scheme to a resource server that does not
+   verify the cnf claim of the access token.  Resource servers that
+   support both the Bearer and DPoP authentication schemes need to
+   reject DPoP-bound access tokens presented using the Bearer
+   authentication scheme, as described in Section 7.2 of [RFC9449].
+   This specification does not change those requirements.
+
+5.  IANA Considerations
+
+5.1.  OAuth Authorization Server Metadata Registry
+
+   The following authorization server metadata value is defined by this
+   specification and registered in the IANA "OAuth Authorization Server
+   Metadata" registry established in OAuth 2.0 Authorization Server
+   Metadata [RFC8414].
+
+   *  Metadata Name: dpop_bound_access_tokens_required
+
+   *  Metadata Description: Boolean value specifying whether the
+      authorization server always issues DPoP-bound access tokens and
+      requires DPoP for all requests to its pushed authorization request
+      endpoint and token endpoint
+
+   *  Change Controller: IETF
+
+   *  Specification Document: This document
+
+6.  References
+
+6.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC8414]  Jones, M., Sakimura, N., and J. Bradley, "OAuth 2.0
+              Authorization Server Metadata", RFC 8414,
+              DOI 10.17487/RFC8414, June 2018,
+              <https://www.rfc-editor.org/rfc/rfc8414>.
+
+   [RFC9126]  Lodderstedt, T., Campbell, B., Sakimura, N., Tonge, D.,
+              and F. Skokan, "OAuth 2.0 Pushed Authorization Requests",
+              RFC 9126, DOI 10.17487/RFC9126, September 2021,
+              <https://www.rfc-editor.org/rfc/rfc9126>.
+
+   [RFC9449]  Fett, D., Campbell, B., Bradley, J., Lodderstedt, T.,
+              Jones, M., and D. Waite, "OAuth 2.0 Demonstrating Proof of
+              Possession (DPoP)", RFC 9449, DOI 10.17487/RFC9449,
+              September 2023, <https://www.rfc-editor.org/rfc/rfc9449>.
+
+6.2.  Informative References
+
+   [RFC6749]  Hardt, D., Ed., "The OAuth 2.0 Authorization Framework",
+              RFC 6749, DOI 10.17487/RFC6749, October 2012,
+              <https://www.rfc-editor.org/rfc/rfc6749>.
+
+   [RFC9728]  Jones, M.B., Hunt, P., and A. Parecki, "OAuth 2.0
+              Protected Resource Metadata", RFC 9728,
+              DOI 10.17487/RFC9728, April 2025,
+              <https://www.rfc-editor.org/rfc/rfc9728>.
+
+Acknowledgments
+
+   The author would like to thank Max Gerber (Twilio) for identifying
+   the gap in OAuth Authorization Server Metadata that this document
+   addresses.
+
+Document History
+
+   (This appendix to be deleted by the RFC editor in the final
+   specification.)
+
+-00
+
+   Initial draft
+
+Author's Address
+
+   Emelia Smith
+   Email: emelia@brandedcode.com
+   URI:   https://thisismissem.social
